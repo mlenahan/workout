@@ -11,7 +11,7 @@ class ExerciseSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return Exercise.objects.create(**validated_data)
 
-    def update(self, validated_data):
+    def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.primary_musclegroup = validated_data.get('primary_musclegroup', instance.primary_musclegroup)
         instance.secondary_musclegroup = validated_data.get('secondary_musclegroup', instance.secondary_musclegroup)
