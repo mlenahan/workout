@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from core.models import Exercise
-from core.base import Musclegroup
 
 
 class ExerciseSerializer(serializers.ModelSerializer):
@@ -18,4 +17,3 @@ class ExerciseSerializer(serializers.ModelSerializer):
         instance.description = validated_data.get('description', instance.description)
         instance.save()
         return instance
-

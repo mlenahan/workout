@@ -3,136 +3,133 @@ from rest_framework import status
 from django.test import TestCase, Client
 from django.urls import reverse
 from core.models import Exercise
+from core.base import Musclegroup
 from service.serializers import ExerciseSerializer
 
 client = Client()
 
+CONTENT_TYPE = 'application/json'
 
-class GetAllExercisesTest(TestCase):
+
+class TestMixin:
+    def create_test_exercise(self, **kwargs):
+        kwargs.setdefault('name', 'Bench Press')
+        kwargs.setdefault('primary_musclegroup', Musclegroup.CHEST)
+        kwargs.setdefault('secondary_musclegroup', Musclegroup.TRICEPS)
+        kwargs.setdefault('description', ' Random description about bench press')
+        return Exercise.objects.create(**kwargs)
+
+    def get_url(self, **kwargs):
+        return reverse(self.url_name, kwargs=kwargs)
+
+
+class GetAllExercisesTest(TestCase, TestMixin):
+
+    url_name = 'exercises'
 
     def setUp(self):
-        Exercise.objects.create(
-            name='Deadlift', primary_musclegroup='Back', secondary_musclegroup='Quads',
-            description='random description')
-        Exercise.objects.create(
-            name='Back Squat', primary_musclegroup='Quads', secondary_musclegroup='Hamstrings',
-            description='random description blah blah')
-        Exercise.objects.create(
-            name='Skull Crusher', primary_musclegroup='Triceps', secondary_musclegroup='',
-            description='random description blah blah blah')
+        self.create_test_exercise()
+        self.create_test_exercise()
+        self.create_test_exercise()
 
     def test_get_all_exercises(self):
-        response = client.get(reverse('exercises'))
-
         exercises = Exercise.objects.all()
         serializer = ExerciseSerializer(exercises, many=True)
+        response = client.get(self.get_url())
         self.assertEqual(response.data, serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-class CreateNewExerciseTest(TestCase):
+class CreateNewExerciseTest(TestCase, TestMixin):
+
+    url_name = 'exercises'
 
     def setUp(self):
-        self.valid_payload = {
+        self.payload = {
             'name': 'Hammer Curl',
             'primary_musclegroup': 'Biceps',
             'secondary_musclegroup': '',
             'description': 'Fake Description about hammer curl'
         }
-        self.invalid_payload = {
-            'name': '',
-            'primary_musclegroup': 'Biceps',
-            'secondary_musclegroup': 'Triceps',
-            'description': 'Fake description about fake exercise'
-        }
 
-    def test_create_valid_puppy(self):
-        response = client.post(
-            reverse('exercises'),
-            data=json.dumps(self.valid_payload),
-            content_type='application/json'
+    def make_request(self):
+        return client.post(
+            self.get_url(),
+            data=json.dumps(self.payload),
+            content_type=CONTENT_TYPE
         )
+
+    def test_create_valid(self):
+        response = self.make_request()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_create_invalid_puppy(self):
-        response = client.post(
-            reverse('exercises'),
-            data=json.dumps(self.invalid_payload),
-            content_type='application/json'
-        )
+    def test_create_invalid(self):
+        self.payload['name'] = ''
+        response = self.make_request()
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class GetExerciseDetailTest(TestCase):
+class GetExerciseDetailTest(TestCase, TestMixin):
+
+    url_name = 'exercise-detail'
 
     def setUp(self):
-        self.exercise = Exercise.objects.create(name='Test Exercise')
+        self.exercise = self.create_test_exercise()
 
     def test_successful_response(self):
-        url = reverse('exercise-detail', kwargs={'pk': self.exercise.pk})
+        serializer = ExerciseSerializer(self.exercise)
+        url = self.get_url(pk=self.exercise.pk)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, serializer.data)
 
     def test_bad_id(self):
-        url = reverse('exercise-detail', kwargs={'pk': self.exercise.pk + 1})
+        url = self.get_url(pk=self.exercise.pk + 1)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
 
-class UpdateSingleExerciseTest(TestCase):
+class UpdateSingleExerciseTest(TestCase, TestMixin):
+
+    url_name = 'exercise-detail'
 
     def setUp(self):
-        self.squat = Exercise.objects.create(
-            name='Squat', primary_musclegroup='Quads', secondary_musclegroup='Hamstrings',
-            description='Random description about squat')
-        self.benchpress = Exercise.objects.create(
-            name='Benchpress', primary_musclegroup='Chest', secondary_musclegroup='Triceps',
-            description='Random Description about benchpress')
-        self.valid_payload = {
+        self.exercise = self.create_test_exercise()
+        self.payload = {
             'name': 'Benchpress',
             'primary_musclegroup': 'Chest',
             'secondary_musclegroup': 'Hamstrings',
             'description': 'Random Description about benchpress'
         }
-        self.invalid_payload = {
-            'name': '',
-            'primary_musclegroup': 'Back',
-            'secondary_musclegroup': 'Triceps',
-            'description': 'Random fake description'
-        }
 
-    def test_valid_update_exercise(self):
+    def test_valid_update(self):
         response = client.put(
-            reverse('exercise-detail', kwargs={'pk': self.benchpress.pk}),
-            data=json.dumps(self.valid_payload),
-            content_type='application/json'
+            self.get_url(pk=self.exercise.pk),
+            data=json.dumps(self.payload),
+            content_type=CONTENT_TYPE
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-    def test_invalid_update_puppy(self):
+    def test_invalid_update(self):
+        self.payload['name'] = ''
         response = client.put(
-            reverse('exercise-detail', kwargs={'pk': self.benchpress.pk}),
-            data=json.dumps(self.invalid_payload),
-            content_type='application/json')
+            self.get_url(pk=self.exercise.pk),
+            data=json.dumps(self.payload),
+            content_type=CONTENT_TYPE)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class DeleteSingleExerciseTest(TestCase):
+class DeleteSingleExerciseTest(TestCase, TestMixin):
+
+    url_name = 'exercise-detail'
 
     def setUp(self):
-        self.squat = Exercise.objects.create(
-            name='Squat', primary_musclegroup='Quads', secondary_musclegroup='Hamstrings',
-            description='Random description about squat')
-        self.benchpress = Exercise.objects.create(
-            name='Benchpress', primary_musclegroup='Chest', secondary_musclegroup='Triceps',
-            description='Random Description about benchpress')
+        self.exercise = self.create_test_exercise()
 
-    def test_valid_delete_exercise(self):
-        response = client.delete(
-            reverse('exercise-detail', kwargs={'pk': self.squat.pk}))
+    def test_valid_delete(self):
+        response = client.delete(self.get_url(pk=self.exercise.pk))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-    def test_invalid_delete_exercise(self):
-        response = client.delete(
-            reverse('exercise-detail', kwargs={'pk': 30000}))
+    def test_invalid_delete(self):
+        response = client.delete(self.get_url(pk=self.exercise.pk + 1))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

@@ -11,10 +11,3 @@ class Exercise(models.Model):
 
     class Meta:
         ordering = ['name']
-
-
-
-
-
-
-
