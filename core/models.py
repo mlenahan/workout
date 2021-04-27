@@ -1,20 +1,63 @@
 from django.db import models
-from .base import Musclegroup
 
 
 class Exercise(models.Model):
-    name = models.CharField(max_length=255)
-    created = models.DateTimeField(auto_now=True)
-    primary_musclegroup = models.CharField(max_length=100, choices=Musclegroup.CHOICES)
-    secondary_musclegroup = models.CharField(max_length=100, blank=True, null=True, choices=Musclegroup.CHOICES)
-    description = models.TextField(max_length=None)
+    name = models.CharField(
+        max_length=255,
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+    description = models.TextField(
+        max_length=None,
+    )
 
     class Meta:
         ordering = ['name']
 
+    def __str__(self):
+        return self.name
 
 
+class Workout(models.Model):
+    name = models.CharField(
+        max_length=255,
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    def __str__(self):
+        return self.name
 
 
+class Set(models.Model):
+    exercise = models.ForeignKey(
+        'core.Exercise',
+        on_delete=models.CASCADE
+    )
+    workout = models.ForeignKey(
+        'core.Workout',
+        on_delete=models.CASCADE
+    )
+    reps = models.PositiveIntegerField(
+        default=0,
+    )
+    weight = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+    )
+    # weight measurement?
+    notes = models.TextField(
+        null=True,
+        blank=True,
+        max_length=1000,
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
 
+    def __str__(self):
+        return str(self.exercise) + ' - ' + str(self.reps) + ' - ' + str(self.weight)
 
+    # Add a method to convert to other weight measurement
