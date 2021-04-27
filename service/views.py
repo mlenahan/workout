@@ -11,8 +11,8 @@ from rest_framework.response import Response
 class ExerciseList(APIView):
 
     def get(self, request, format=None):
-        snippets = Exercise.objects.all()
-        serializer = ExerciseSerializer(snippets, many=True)
+        exercises = Exercise.objects.all()
+        serializer = ExerciseSerializer(exercises, many=True)
         return Response(serializer.data)
 
     def post(self, request, format=None):
@@ -32,19 +32,19 @@ class ExerciseDetail(APIView):
             raise Http404
 
     def get(self, request, pk, format=None):
-        snippet = self.get_object(pk)
-        serializer = ExerciseSerializer(snippet)
+        exercise = self.get_object(pk)
+        serializer = ExerciseSerializer(exercise)
         return Response(serializer.data)
 
     def put(self, request, pk, format=None):
-        snippet = self.get_object(pk)
-        serializer = ExerciseSerializer(snippet, data=request.data)
+        exercise = self.get_object(pk)
+        serializer = ExerciseSerializer(exercise, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, format=None):
-        snippet = self.get_object(pk)
-        snippet.delete()
+        exercise = self.get_object(pk)
+        exercise.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
