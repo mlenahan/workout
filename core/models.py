@@ -59,3 +59,5 @@ class Set(models.Model):
 
     def __str__(self):
         return str(self.exercise) + ' - ' + str(self.reps) + ' - ' + str(self.weight)
+
+    # Add a method to convert to other weight measurement

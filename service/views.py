@@ -8,6 +8,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 
+# Think about every different action the client will want to do:
+#
+# * Show all types of exercise
+# * Show the user all of his/her workouts
+# * Create a new workout
+# * Add a set to a workout
+# ...
+
+
 class ExerciseList(APIView):
 
     def get(self, request, format=None):
