@@ -1,0 +1,6 @@
+[flake8]
+exclude =
+    migrations,
+    venv,
+    .git
+ignore = E501,W503
